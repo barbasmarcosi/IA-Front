@@ -1,16 +1,19 @@
 import { Button, Card, Form, InputNumber } from "antd";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LoadImage from "../components/LoadImage/LoadImage";
 import { userApi } from "../api";
 import VisualizeData from "../components/VisualizeData/VisualizeData";
 import ResultImage from "../components/ResultImage/ResultImage";
 import UploadDb from "../components/UploadDb/UploadDb";
+import ColumnsCheckbox from "../components/ColumnsCheckbox/ColumnsCheckbox";
 
 const DbAnalisis = () => {
   const [options, setOptions] = useState(null);
   const [file, setFile] = useState(null);
   const [analysisResponse, setAnalysisResponse] = useState(null);
   const [showResultImage, setShowResultImage] = useState(false);
+  const [checkedColumns, setCheckedColumns] = useState(false);
+  const [plainOptions, setPlainOptions] = useState([]);
   const formRef = useRef(null);
 
   const htmlToJson = (htmlString) => {
@@ -34,41 +37,51 @@ const DbAnalisis = () => {
 
   const getChecklist = () => {
     const formData = new FormData();
-    const formValues = formRef.current.getFieldsValue();
-    // console.log("Enviando");
-    console.log("file");
+    console.log("Enviando");
     console.log(file);
-    console.log("file?.originFileObj");
-    // console.log(file?.originFileObj);
-    if (file) {
-      formData.append("file", file); // Usa el archivo real
-      formData.append("body", file); // Usa el archivo real
+    if (file?.file) {
+      formData.append("file", file.file);
     }
-    formData.append("min", formValues.min);
-    // formData.append("max", formValues.max);
 
     userApi
-      .post("uploadfile_checklist", formData, {
-        //   params: {
-        //     min_clusters: formValues.min,
-        //     max_clusters: formValues.max,
-        //   },
+      .post("uploadfile_checklist/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       })
       .then((res) => {
         console.log(res);
-        console.log(htmlToJson(res));
-        setOptions(htmlToJson(res));
-        setShowResultImage(false);
-        setAnalysisResponse(res);
-        setTimeout(() => {
-          setShowResultImage(true);
-        }, [1000]);
+        setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
       })
       .catch((e) => console.error(e));
   };
+
+  const transformValues = () => {
+    const formData = new FormData();
+    console.log("Enviando");
+    console.log(file);
+    if (file?.file) {
+      formData.append("file", file.file);
+      formData.append("columns", [checkedColumns ? checkedColumns : plainOptions]);
+    }
+    console.log(file.file)
+    console.log(checkedColumns ? checkedColumns : plainOptions)
+    console.log(formData)
+
+    userApi
+      .post("transform_values", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((res) => {
+        console.log(res);
+        // setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
+      })
+      .catch((e) => console.error(e));
+  };
+
+  useEffect(() => { getChecklist() }, [file])
 
   return (
     <div
@@ -91,7 +104,7 @@ const DbAnalisis = () => {
         }}
       >
         <Card
-          style={{ width: "50%", height: "40vh" }}
+          style={{ width: "50%" }}
           title={"Complete para analizar utilizando FAUM"}
         >
           <Form
@@ -104,60 +117,35 @@ const DbAnalisis = () => {
               alignItems: "center",
             }}
             ref={formRef}
+          ><Form.Item
+            style={{
+              width: "100%",
+            }}
+            name="bd"
+            label="Base de datos"
           >
-            <UploadDb file={file} setFile={setFile} />
-            {/* <Form.Item
+              <UploadDb file={file} setFile={setFile} /></Form.Item>
+            <Form.Item
               style={{
                 width: "100%",
-                marginLeft: "2rem",
               }}
-              name="imagenes"
-              label="Imagen"
+              name="columns"
+              label="Columnas"
             >
-              <LoadImage image={image} setImage={setImage} />
+
+              {plainOptions.length && <ColumnsCheckbox plainOptions={plainOptions} setCheckedColumns={setCheckedColumns} />}
             </Form.Item>
-            <div>
-              <Form.Item
-                style={{
-                  width: "100%",
-                }}
-                name="min"
-                label="Clusters mínimos"
-              >
-                <InputNumber
-                  style={{
-                    width: "100%",
-                  }}
-                  min={1}
-                />
-              </Form.Item>
-              <Form.Item
-                style={{
-                  width: "40vw",
-                }}
-                name="max"
-                label="Clusters máximos"
-              >
-                <InputNumber
-                  style={{
-                    width: "100%",
-                  }}
-                  min={1}
-                />
-              </Form.Item>
-            </div> */}
-            <Button onClick={getChecklist}>Analizar</Button>
+
+            <Form.Item style={{
+              width: "100%",
+            }}
+              name="bits"
+              label="Bits"><InputNumber /></Form.Item>
+            <Button onClick={transformValues}>Analizar</Button>
           </Form>
         </Card>
-        {/* <Card
-          style={{ width: "50%", height: "40vh" }}
-          title={"Imagen clusterizada"}
-        >
-          {showResultImage && <ResultImage showResultImage={showResultImage} />}
-        </Card> */}
       </div>
-      {/* {analysisResponse && <VisualizeData data={analysisResponse} />} */}
-    </div>
+    </div >
   );
 };
 

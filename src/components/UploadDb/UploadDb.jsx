@@ -12,7 +12,8 @@ const UploadDb = ({ file, setFile }) => {
     onChange(info) {
       console.log(info);
       const { status } = info.file;
-      setFile(info.file);
+      console.log(info)
+      setFile(info);
       if (status !== "uploading") {
         console.log(info.file, info.fileList);
       }
