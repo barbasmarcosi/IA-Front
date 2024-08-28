@@ -1,4 +1,4 @@
-import { Button, Card, Form, InputNumber } from "antd";
+import { Button, Card, Form, InputNumber, Select } from "antd";
 import { useEffect, useRef, useState } from "react";
 import LoadImage from "../components/LoadImage/LoadImage";
 import { userApi } from "../api";
@@ -6,34 +6,16 @@ import VisualizeData from "../components/VisualizeData/VisualizeData";
 import ResultImage from "../components/ResultImage/ResultImage";
 import UploadDb from "../components/UploadDb/UploadDb";
 import ColumnsCheckbox from "../components/ColumnsCheckbox/ColumnsCheckbox";
+import DataTable from "../components/DataTable/DataTable";
 
 const DbAnalisis = () => {
   const [options, setOptions] = useState(null);
+  const [dataToVisualize, setDataToVisualize] = useState(null);
   const [file, setFile] = useState(null);
-  const [analysisResponse, setAnalysisResponse] = useState(null);
-  const [showResultImage, setShowResultImage] = useState(false);
   const [checkedColumns, setCheckedColumns] = useState(false);
   const [plainOptions, setPlainOptions] = useState([]);
+  const [tableData, setTableData] = useState(false);
   const formRef = useRef(null);
-
-  const htmlToJson = (htmlString) => {
-    // Crear un elemento temporal para contener el HTML
-    const tempElement = document.createElement("div");
-    tempElement.innerHTML = htmlString;
-
-    // Seleccionar todos los inputs de tipo checkbox
-    const checkboxes = tempElement.querySelectorAll('input[type="checkbox"]');
-
-    // Mapear cada checkbox a un objeto JSON
-    const jsonResult = Array.from(checkboxes).map((checkbox) => {
-      return {
-        label: checkbox.nextSibling.textContent.trim(), // El texto que sigue al input
-        value: checkbox.value, // El valor del input
-      };
-    });
-
-    return jsonResult;
-  };
 
   const getChecklist = () => {
     const formData = new FormData();
@@ -51,7 +33,7 @@ const DbAnalisis = () => {
       })
       .then((res) => {
         console.log(res);
-        setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
+        setPlainOptions(res.filter((el) => el != "Unnamed: 0"));
       })
       .catch((e) => console.error(e));
   };
@@ -62,11 +44,14 @@ const DbAnalisis = () => {
     console.log(file);
     if (file?.file) {
       formData.append("file", file.file);
-      formData.append("columns", [checkedColumns ? checkedColumns : plainOptions]);
+      formData.append("columns", [
+        checkedColumns ? checkedColumns : plainOptions,
+      ]);
+      formData.append("bits", formRef.current.getFieldValue("bits"));
     }
-    console.log(file.file)
-    console.log(checkedColumns ? checkedColumns : plainOptions)
-    console.log(formData)
+    console.log(file.file);
+    console.log(checkedColumns ? checkedColumns : plainOptions);
+    console.log(formData);
 
     userApi
       .post("transform_values", formData, {
@@ -76,12 +61,18 @@ const DbAnalisis = () => {
       })
       .then((res) => {
         console.log(res);
+        setDataToVisualize(res.result);
+        console.log(res.table);
+        console.log(JSON.parse(res.table));
+        setTableData(JSON.parse(res.table));
         // setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
       })
       .catch((e) => console.error(e));
   };
 
-  useEffect(() => { getChecklist() }, [file])
+  useEffect(() => {
+    getChecklist();
+  }, [file]);
 
   return (
     <div
@@ -99,12 +90,12 @@ const DbAnalisis = () => {
           width: "96vw",
           overflowX: "hidden",
           display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
+          // flexDirection: "row",
+          // alignItems: "center",
         }}
       >
         <Card
-          style={{ width: "50%" }}
+          // style={{ width: "48vw", height: '20vh' }}
           title={"Complete para analizar utilizando FAUM"}
         >
           <Form
@@ -115,16 +106,20 @@ const DbAnalisis = () => {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
+              width: "40vw",
+              height: "50vh",
             }}
             ref={formRef}
-          ><Form.Item
-            style={{
-              width: "100%",
-            }}
-            name="bd"
-            label="Base de datos"
           >
-              <UploadDb file={file} setFile={setFile} /></Form.Item>
+            <Form.Item
+              style={{
+                width: "100%",
+              }}
+              name="bd"
+              label="Base de datos"
+            >
+              <UploadDb file={file} setFile={setFile} />
+            </Form.Item>
             <Form.Item
               style={{
                 width: "100%",
@@ -132,20 +127,45 @@ const DbAnalisis = () => {
               name="columns"
               label="Columnas"
             >
-
-              {plainOptions.length && <ColumnsCheckbox plainOptions={plainOptions} setCheckedColumns={setCheckedColumns} />}
+              {!!plainOptions.length && (
+                <ColumnsCheckbox
+                  plainOptions={plainOptions}
+                  setCheckedColumns={setCheckedColumns}
+                />
+              )}
             </Form.Item>
 
-            <Form.Item style={{
-              width: "100%",
-            }}
+            <Form.Item
+              style={{
+                width: "100%",
+              }}
               name="bits"
-              label="Bits"><InputNumber /></Form.Item>
+              label="Bits"
+            >
+              <Select
+                options={[
+                  { label: 8, value: 8 },
+                  { label: 16, value: 16 },
+                  // { label: 32, value: 32 },
+                ]}
+              />
+            </Form.Item>
             <Button onClick={transformValues}>Analizar</Button>
           </Form>
         </Card>
+        {dataToVisualize ? (
+          <VisualizeData data={dataToVisualize} />
+        ) : (
+          <div style={{ width: "50vw", height: "50vh" }} />
+        )}
       </div>
-    </div >
+      {tableData && (
+        <DataTable
+          columns={checkedColumns ? checkedColumns : plainOptions}
+          data={tableData}
+        />
+      )}
+    </div>
   );
 };
 

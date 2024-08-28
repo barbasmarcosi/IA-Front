@@ -20,6 +20,8 @@ const { Panel } = Collapse;
 //   },
 // };
 
+
+
 const renderOrderData = (orderData) =>
   orderData.map((item, index) => (
     <Descriptions bordered column={2} key={index}>
@@ -34,10 +36,10 @@ const renderOrderData = (orderData) =>
 const VisualizeData = ({ data }) => {
   return (
     <Card
-      title="Resultados del análisis de imagen"
-      style={{ width: "100%", margin: "auto" }}
+      title="Resultados del análisis"
+      style={{ width: "100%", margin: "auto", height: "100%" }}
     >
-      <Collapse defaultActiveKey={["1"]}>
+      <Collapse defaultActiveKey={["1"]} style={{ height: "50vh" }}>
         {Object.entries(data.Summary) && (
           <Panel header="Summary" key="1">
             <Descriptions bordered column={2}>

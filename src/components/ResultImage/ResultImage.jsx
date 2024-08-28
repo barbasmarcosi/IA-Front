@@ -41,7 +41,7 @@ const ResultImage = ({ showResultImage }) => {
   if (error) return <Alert message={error} type="error" />;
 
   return (
-    <Image width={400} src={imageSrc} alt="Descargada desde el servidor" />
+    <Image width={270} height={270} src={imageSrc} alt="Descargada desde el servidor" />
   );
 };
 
