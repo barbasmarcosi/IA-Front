@@ -2,35 +2,24 @@ import React, { useEffect, useState } from "react";
 import { Button, Card, Spin, Table } from "antd";
 import { userApi } from "../../api";
 
-const DataTable = ({ columns, data }) => {
-  //   const [data, setData] = useState([]);
+const DataTable = ({ columns, data, fileUrl }) => {
   const [spin, setSpin] = useState(false);
 
   const fetchTable = async () => {
     try {
       const response = await userApi.get("download_table/", {
-        responseType: "blob", // Asegura que la respuesta se maneje como un blob
+        responseType: "blob",
+        params: { file_url: fileUrl },
       });
 
-      console.log("Response completa:", response);
-
       if (response instanceof Blob || response.data instanceof Blob) {
-        // Manejo del blob dependiendo de donde se encuentra en la respuesta
         const tableBlob = response.data || response;
-
-        // Crear un enlace para descargar el archivo
         const downloadURL = URL.createObjectURL(tableBlob);
         const link = document.createElement("a");
         link.href = downloadURL;
-
-        // Asignar un nombre al archivo descargado (puedes modificar el nombre)
-        link.download = "resultados.csv"; // Cambia la extensión si es necesario
-
-        // Agregar y hacer clic en el enlace para iniciar la descarga
+        link.download = "resultados.csv";
         document.body.appendChild(link);
         link.click();
-
-        // Limpiar y eliminar el enlace después de la descarga
         document.body.removeChild(link);
         URL.revokeObjectURL(downloadURL);
       } else {
@@ -56,21 +45,6 @@ const DataTable = ({ columns, data }) => {
       dataIndex: columm,
       key: columm,
     })),
-    // {
-    //   title: "Nombre",
-    //   dataIndex: "Nombre",
-    //   key: "nombre",
-    // },
-    // {
-    //   title: "Edad",
-    //   dataIndex: "Edad",
-    //   key: "edad",
-    // },
-    // {
-    //   title: "Ciudad",
-    //   dataIndex: "Ciudad",
-    //   key: "ciudad",
-    // },
   ];
 
   console.log(formattedColumns);
@@ -85,6 +59,7 @@ const DataTable = ({ columns, data }) => {
       <Table
         columns={formattedColumns}
         dataSource={data}
+        loading={spin}
         style={{ width: "94vw" }}
       />
       <Button onClick={() => fetchTable()} type="primary">

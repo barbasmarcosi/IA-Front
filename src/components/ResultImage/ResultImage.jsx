@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Image, Spin, Alert } from "antd";
 import { userApi } from "../../api";
 
-const ResultImage = ({ showResultImage }) => {
+const ResultImage = ({ showResultImage, resultImagePath }) => {
   const [imageSrc, setImageSrc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,9 +10,12 @@ const ResultImage = ({ showResultImage }) => {
   useEffect(() => {
     const fetchImage = async () => {
       try {
+        console.log({image_path: resultImagePath})
         const response = await userApi.get("download_image/", {
-          responseType: "blob", // Asegura que la respuesta se maneje como un blob
+          params: { image_path: resultImagePath },
+          responseType: "blob", 
         });
+        console.log(response)
 
         // Verifica el contenido de la respuesta completa
         console.log("Response completa:", response);
@@ -35,13 +38,18 @@ const ResultImage = ({ showResultImage }) => {
     };
 
     fetchImage();
-  }, [showResultImage]);
+  }, [resultImagePath]);
 
   if (loading) return <Spin size="large" />;
   if (error) return <Alert message={error} type="error" />;
 
   return (
-    <Image width={270} height={270} src={imageSrc} alt="Descargada desde el servidor" />
+    <Image
+      width={270}
+      height={270}
+      src={imageSrc}
+      alt="Descargada desde el servidor"
+    />
   );
 };
 

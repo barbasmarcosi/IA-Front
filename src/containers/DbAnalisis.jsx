@@ -1,4 +1,4 @@
-import { Button, Card, Form, InputNumber, Select } from "antd";
+import { Button, Card, Form, InputNumber, Select, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
 import LoadImage from "../components/LoadImage/LoadImage";
 import { userApi } from "../api";
@@ -12,9 +12,11 @@ const DbAnalisis = () => {
   const [options, setOptions] = useState(null);
   const [dataToVisualize, setDataToVisualize] = useState(null);
   const [file, setFile] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);
   const [checkedColumns, setCheckedColumns] = useState(false);
   const [plainOptions, setPlainOptions] = useState([]);
   const [tableData, setTableData] = useState(false);
+  const [spin, setSpin] = useState(false);
   const formRef = useRef(null);
 
   const getChecklist = () => {
@@ -33,7 +35,8 @@ const DbAnalisis = () => {
       })
       .then((res) => {
         console.log(res);
-        setPlainOptions(res.filter((el) => el != "Unnamed: 0"));
+        console.log(JSON.parse(res.info));
+        setPlainOptions(res.columns.filter((el) => el != "Unnamed: 0"));
       })
       .catch((e) => console.error(e));
   };
@@ -44,13 +47,16 @@ const DbAnalisis = () => {
     console.log(file);
     if (file?.file) {
       formData.append("file", file.file);
-      formData.append("columns", [
-        checkedColumns ? checkedColumns : plainOptions,
-      ]);
-      formData.append("bits", formRef.current.getFieldValue("bits"));
+      formData.append("columns", [checkedColumns]);
+      formData.append(
+        "bits",
+        formRef.current.getFieldValue("bits")
+          ? formRef.current.getFieldValue("bits")
+          : 8
+      );
     }
     console.log(file.file);
-    console.log(checkedColumns ? checkedColumns : plainOptions);
+    console.log(checkedColumns);
     console.log(formData);
 
     userApi
@@ -65,13 +71,33 @@ const DbAnalisis = () => {
         console.log(res.table);
         console.log(JSON.parse(res.table));
         setTableData(JSON.parse(res.table));
+        setFileUrl(res.file_url);
         // setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.log(e);
+        console.error(e);
+        setDataToVisualize(false);
+        setTableData(false);
+        setFileUrl(false);
+      });
   };
 
   useEffect(() => {
     getChecklist();
+  }, [file]);
+
+  useEffect(() => {
+    setSpin(true);
+    if (!!file) {
+      setPlainOptions(false);
+      setDataToVisualize(false);
+      setTableData(false);
+      setFileUrl(false);
+    }
+    setTimeout(() => {
+      setSpin(false);
+    }, [1]);
   }, [file]);
 
   return (
@@ -104,7 +130,7 @@ const DbAnalisis = () => {
               overflowX: "hidden",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
+              justifyContent: "space-around",
               alignItems: "center",
               width: "40vw",
               height: "50vh",
@@ -120,37 +146,47 @@ const DbAnalisis = () => {
             >
               <UploadDb file={file} setFile={setFile} />
             </Form.Item>
-            <Form.Item
-              style={{
-                width: "100%",
-              }}
-              name="columns"
-              label="Columnas"
-            >
-              {!!plainOptions.length && (
-                <ColumnsCheckbox
-                  plainOptions={plainOptions}
-                  setCheckedColumns={setCheckedColumns}
-                />
-              )}
-            </Form.Item>
+            {spin ? (
+              <Spin />
+            ) : (
+              <>
+                <Form.Item
+                  style={{
+                    width: "100%",
+                    minHeight: "50%",
+                  }}
+                  name="columns"
+                  label="Columnas"
+                >
+                  {!!plainOptions.length && !!file && (
+                    <ColumnsCheckbox
+                      plainOptions={plainOptions}
+                      setCheckedColumns={setCheckedColumns}
+                    />
+                  )}
+                </Form.Item>
 
-            <Form.Item
-              style={{
-                width: "100%",
-              }}
-              name="bits"
-              label="Bits"
-            >
-              <Select
-                options={[
-                  { label: 8, value: 8 },
-                  { label: 16, value: 16 },
-                  // { label: 32, value: 32 },
-                ]}
-              />
-            </Form.Item>
-            <Button onClick={transformValues}>Analizar</Button>
+                <Form.Item
+                  style={{
+                    width: "100%",
+                  }}
+                  name="bits"
+                  label="Bits"
+                >
+                  <Select
+                    defaultValue={8}
+                    options={[
+                      { label: 8, value: 8 },
+                      { label: 16, value: 16 },
+                      // { label: 32, value: 32 },
+                    ]}
+                  />
+                </Form.Item>
+                <Button type="primary" onClick={transformValues}>
+                  Analizar
+                </Button>
+              </>
+            )}
           </Form>
         </Card>
         {dataToVisualize ? (
@@ -163,6 +199,7 @@ const DbAnalisis = () => {
         <DataTable
           columns={checkedColumns ? checkedColumns : plainOptions}
           data={tableData}
+          fileUrl={fileUrl}
         />
       )}
     </div>

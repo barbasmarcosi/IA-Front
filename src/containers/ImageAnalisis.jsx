@@ -1,4 +1,4 @@
-import { Button, Card, Form, InputNumber } from "antd";
+import { Button, Card, Form, InputNumber, message } from "antd";
 import { useRef, useState } from "react";
 import LoadImage from "../components/LoadImage/LoadImage";
 import { userApi } from "../api";
@@ -9,18 +9,15 @@ const ImageAnalisis = () => {
   const [image, setImage] = useState(null);
   const [analysisResponse, setAnalysisResponse] = useState(null);
   const [showResultImage, setShowResultImage] = useState(false);
+  const [resultImagePath, setResultImagePath] = useState(false);
   const formRef = useRef(null);
 
   const analyzeImage = () => {
     const formData = new FormData();
     const formValues = formRef.current.getFieldsValue();
-    console.log("Enviando");
-    console.log(image);
     if (image?.originFileObj) {
-      formData.append("file", image.originFileObj); // Usa el archivo real
+      formData.append("file", image.originFileObj);
     }
-    // formData.append("min", formValues.min);
-    // formData.append("max", formValues.max);
 
     userApi
       .post("generate_image/", formData, {
@@ -34,13 +31,15 @@ const ImageAnalisis = () => {
       })
       .then((res) => {
         console.log(res);
+        console.log(res.image);
         setShowResultImage(false);
         setAnalysisResponse(res);
+        setResultImagePath(res.image);
         setTimeout(() => {
           setShowResultImage(true);
         }, [1000]);
       })
-      .catch((e) => console.error(e));
+      .catch((e) => message.error('Hubo un error con su imagen, pruebe con otra'));
   };
 
   return (
@@ -125,7 +124,12 @@ const ImageAnalisis = () => {
           style={{ width: "50%", height: "40vh" }}
           title={"Imagen clusterizada"}
         >
-          {showResultImage && <ResultImage showResultImage={showResultImage} />}
+          {showResultImage && (
+            <ResultImage
+              showResultImage={showResultImage}
+              resultImagePath={resultImagePath}
+            />
+          )}
         </Card>
       </div>
       {analysisResponse && <VisualizeData data={analysisResponse} />}
