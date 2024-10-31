@@ -1,4 +1,4 @@
-import { Button, Card, Form, InputNumber, message } from "antd";
+import { Button, Card, Checkbox, Form, InputNumber, message } from "antd";
 import { useRef, useState } from "react";
 import LoadImage from "../components/LoadImage/LoadImage";
 import { userApi } from "../api";
@@ -39,7 +39,9 @@ const ImageAnalisis = () => {
           setShowResultImage(true);
         }, [1000]);
       })
-      .catch((e) => message.error('Hubo un error con su imagen, pruebe con otra'));
+      .catch((e) =>
+        message.error("Hubo un error con su imagen, pruebe con otra")
+      );
   };
 
   return (
@@ -86,6 +88,7 @@ const ImageAnalisis = () => {
               label="Imagen"
             >
               <LoadImage image={image} setImage={setImage} />
+              <Checkbox>Histograma</Checkbox>
             </Form.Item>
             <div>
               <Form.Item

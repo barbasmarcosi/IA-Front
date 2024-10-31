@@ -18,7 +18,7 @@ export const defaultSuccessHandler = (response) => {
 
 export function createApi({
   baseURL = API_URL,
-  timeout = 20000,
+  timeout = 20000000000,
   headers = {
     "Authorization": API_KEY,
     "Content-Type": "application/json",
