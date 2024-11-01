@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Card } from "antd";
 
-const HistogramPlot = ({ imageData, setImageData }) => {
+const HistogramPlot = ({ imageData, setImageData, style = {} }) => {
   //   const [imageData, setImageData] = useState("");
 
   useEffect(() => {
@@ -20,7 +20,10 @@ const HistogramPlot = ({ imageData, setImageData }) => {
   return (
     <div>
       {imageData ? (
-        <Card title={'Histograma de Valores de Centroides'}>
+        <Card
+          title={"Histograma de Valores de Centroides"}
+          style={{ ...style }}
+        >
           {/* <h2></h2> */}
           <img src={`data:image/png;base64,${imageData}`} alt="Histograma" />
         </Card>

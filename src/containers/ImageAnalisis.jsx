@@ -4,45 +4,139 @@ import LoadImage from "../components/LoadImage/LoadImage";
 import { userApi } from "../api";
 import VisualizeData from "../components/VisualizeData/VisualizeData";
 import ResultImage from "../components/ResultImage/ResultImage";
+import HistogramPlot from "../components/HistogramPlot/HistogramPlot";
 
 const ImageAnalisis = () => {
   const [image, setImage] = useState(null);
   const [analysisResponse, setAnalysisResponse] = useState(null);
   const [showResultImage, setShowResultImage] = useState(false);
   const [resultImagePath, setResultImagePath] = useState(false);
+  const [tableData, setTableData] = useState(false);
+  const [spin, setSpin] = useState(false);
+  const [imageData, setImageData] = useState(null);
+  const [explicitBin, setExplicitBin] = useState(false);
+  const [histograma, setHistograma] = useState(false);
+  const [summaryData, setSummaryData] = useState(false);
+  const [fileUrl, setFileUrl] = useState(false);
   const formRef = useRef(null);
 
-  const analyzeImage = () => {
-    const formData = new FormData();
-    const formValues = formRef.current.getFieldsValue();
-    if (image?.originFileObj) {
-      formData.append("file", image.originFileObj);
-    }
+  const analyzeImage = (image) => {
+    // const formData = ;
+    console.log(image?.originFileObj);
+    formRef.current.setFieldValue("imagen", image?.originFileObj);
 
-    userApi
-      .post("generate_image/", formData, {
-        params: {
-          min_clusters: formValues.min,
-          max_clusters: formValues.max,
-        },
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+    formRef.current
+      .validateFields()
+      .then(() => {
+        const formData = new FormData();
+        console.log("Enviando");
+        // console.log(file);
+        console.log(formRef.current.getFieldsValue());
+        if (image.originFileObj) {
+          formData.append("file", image.originFileObj);
+          // formData.append("columns", [checkedColumns]);
+          if (formRef.current.getFieldValue("min_clusters")) {
+            formData.append(
+              "min_clusters",
+              formRef.current.getFieldValue("min_clusters")
+            );
+          }
+          if (formRef.current.getFieldValue("max_clusters")) {
+            formData.append(
+              "max_clusters",
+              formRef.current.getFieldValue("max_clusters")
+            );
+          }
+          formData.append(
+            "bits",
+            formRef.current.getFieldValue("bits")
+              ? formRef.current.getFieldValue("bits")
+              : 8
+          );
+          if (explicitBin) {
+            formData.append("explicit_bin", 1);
+            formData.append(
+              "binsize",
+              formRef.current.getFieldValue("binsize")
+            );
+            formData.append(
+              "bin_distance",
+              formRef.current.getFieldValue("bin_distance")
+            );
+          }
+          formData.append("histograma", histograma ? 1 : 0);
+        }
+        userApi
+          .post("generate_image/", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          })
+          .then((res) => {
+            // console.log(res);
+            // setDataToVisualize(res.result);
+            // console.log(res.table);
+            // console.log(JSON.parse(res.table));
+            // setTableData(JSON.parse(res.table));
+            setFileUrl(res.file_url);
+            setImageData(res.graphics);
+            setSummaryData(res.clusters?.Summary);
+            setShowResultImage(false);
+            setAnalysisResponse(res);
+            setResultImagePath(res.image);
+            setTimeout(() => {
+              setShowResultImage(true);
+            }, [1000]);
+            //{CardinalityDispersion: 3, ClusterizedHyperBins: 130, TotalClusters: 3}
+            // setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
+          })
+          .catch((e) => {
+            console.log(e);
+            console.error(e);
+            message.error(
+              "Hubo un error al analizar la imagen, por favor verique que el formato sea PNG"
+            );
+            // setDataToVisualize(false);
+            setTableData(false);
+            setFileUrl(false);
+          });
       })
-      .then((res) => {
-        console.log(res);
-        console.log(res.image);
-        setShowResultImage(false);
-        setAnalysisResponse(res);
-        setResultImagePath(res.image);
-        setTimeout(() => {
-          setShowResultImage(true);
-        }, [1000]);
-      })
-      .catch((e) =>
-        message.error("Hubo un error con su imagen, pruebe con otra")
-      );
+      .catch((err) => {
+        console.log(err);
+        return false;
+      });
   };
+  // const analyzeImage = () => {
+  //   const formData = new FormData();
+  //   const formValues = formRef.current.getFieldsValue();
+  //   if (image?.originFileObj) {
+  //     formData.append("file", image.originFileObj);
+  //   }
+
+  //   userApi
+  //     .post("generate_image/", formData, {
+  //       params: {
+  //         min_clusters: formValues.min,
+  //         max_clusters: formValues.max,
+  //       },
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     })
+  //     .then((res) => {
+  //       console.log(res);
+  //       console.log(res.image);
+  //       setShowResultImage(false);
+  //       setAnalysisResponse(res);
+  //       setResultImagePath(res.image);
+  //       setTimeout(() => {
+  //         setShowResultImage(true);
+  //       }, [1000]);
+  //     })
+  //     .catch((e) =>
+  //       message.error("Hubo un error con su imagen, pruebe con otra")
+  //     );
+  // };
 
   return (
     <div
@@ -65,7 +159,7 @@ const ImageAnalisis = () => {
         }}
       >
         <Card
-          style={{ width: "50%", height: "40vh" }}
+          style={{ width: "50%", height: "75vh" }}
           title={"Complete para analizar utilizando FAUM"}
         >
           <Form
@@ -74,57 +168,96 @@ const ImageAnalisis = () => {
               overflowX: "hidden",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
+              justifyContent: "space-around",
+              alignItems: "left",
+              width: "40vw",
+              // height: "100vh",
             }}
             ref={formRef}
           >
             <Form.Item
               style={{
                 width: "100%",
-                marginLeft: "2rem",
+                // marginLeft: "2rem",
               }}
-              name="imagenes"
+              rules={[
+                {
+                  required: true,
+                  message: "Por favor ingrese una imagen en formato PNG",
+                  // type: "",
+                },
+              ]}
+              name="imagen"
               label="Imagen"
             >
               <LoadImage image={image} setImage={setImage} />
-              <Checkbox>Histograma</Checkbox>
             </Form.Item>
-            <div>
-              <Form.Item
-                style={{
-                  width: "100%",
+            <Form.Item name="histograma">
+              <Checkbox onChange={(e) => setHistograma(e.target.checked)}>
+                Histograma
+              </Checkbox>
+            </Form.Item>
+            <Form.Item name="min_clusters" label="Nro. clusters mínimos">
+              <InputNumber />
+            </Form.Item>
+            <Form.Item name="max_clusters" label="Nro. clusters máximo">
+              <InputNumber />
+            </Form.Item>
+            <Form.Item name="explicit_bin">
+              <Checkbox
+                value={explicitBin}
+                onChange={(value) => {
+                  console.log(value.target.checked);
+                  setExplicitBin(value.target.checked);
                 }}
-                name="min"
-                label="Clusters mínimos"
               >
-                <InputNumber
-                  style={{
-                    width: "100%",
-                  }}
-                  min={1}
-                />
-              </Form.Item>
-              <Form.Item
-                style={{
-                  width: "40vw",
-                }}
-                name="max"
-                label="Clusters máximos"
-              >
-                <InputNumber
-                  style={{
-                    width: "100%",
-                  }}
-                  min={1}
-                />
-              </Form.Item>
-            </div>
-            <Button onClick={analyzeImage}>Analizar</Button>
+                Explicitar datos de bin
+              </Checkbox>
+            </Form.Item>
+            {!!explicitBin && (
+              <>
+                <Form.Item
+                  name="binsize"
+                  label="Tamaño de bin"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Por favor ingrese el tamaño de bin",
+                      type: "number",
+                    },
+                  ]}
+                >
+                  <InputNumber disabled={!explicitBin} />
+                </Form.Item>
+                <Form.Item
+                  name="bin_distance"
+                  label="Distancia entre bines"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Por favor ingrese la distancia entre bines",
+                      type: "number",
+                    },
+                  ]}
+                >
+                  <InputNumber disabled={!explicitBin} />
+                </Form.Item>
+              </>
+            )}
+            <Button onClick={() => analyzeImage(image)}>Analizar</Button>
           </Form>
+          {summaryData && (
+            <>
+              <h4>Dispersion cardinal: {summaryData?.CardinalityDispersion}</h4>
+              <h4>
+                Hiper bins clusterizados: {summaryData?.ClusterizedHyperBins}
+              </h4>
+              <h4>Total de clusters: {summaryData?.TotalClusters}</h4>
+            </>
+          )}
         </Card>
         <Card
-          style={{ width: "50%", height: "40vh" }}
+          style={{ width: "50%", height: "75vh" }}
           title={"Imagen clusterizada"}
         >
           {showResultImage && (
@@ -135,7 +268,20 @@ const ImageAnalisis = () => {
           )}
         </Card>
       </div>
-      {analysisResponse && <VisualizeData data={analysisResponse} />}
+      {/* {analysisResponse && <VisualizeData data={analysisResponse} />} */}
+      {/* {imageData && ( */}
+      <HistogramPlot
+        imageData={imageData}
+        setImageData={setImageData}
+        style={{
+          width: "100vw",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      />
+      {/* )} */}
     </div>
   );
 };

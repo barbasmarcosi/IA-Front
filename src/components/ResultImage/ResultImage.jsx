@@ -10,12 +10,12 @@ const ResultImage = ({ showResultImage, resultImagePath }) => {
   useEffect(() => {
     const fetchImage = async () => {
       try {
-        console.log({image_path: resultImagePath})
+        console.log({ image_path: resultImagePath });
         const response = await userApi.get("download_image/", {
           params: { image_path: resultImagePath },
-          responseType: "blob", 
+          responseType: "blob",
         });
-        console.log(response)
+        console.log(response);
 
         // Verifica el contenido de la respuesta completa
         console.log("Response completa:", response);
@@ -33,6 +33,7 @@ const ResultImage = ({ showResultImage, resultImagePath }) => {
       } catch (err) {
         console.error("Error al obtener la imagen:", err);
         setError("No se pudo cargar la imagen.");
+        message.error("No se pudo cargar la imagen");
         setLoading(false);
       }
     };
@@ -45,8 +46,8 @@ const ResultImage = ({ showResultImage, resultImagePath }) => {
 
   return (
     <Image
-      width={270}
-      height={270}
+      width={"30vw"}
+      height={"30vw"}
       src={imageSrc}
       alt="Descargada desde el servidor"
     />

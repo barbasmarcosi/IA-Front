@@ -22,6 +22,7 @@ const DbAnalisis = () => {
   const [imageData, setImageData] = useState(null);
   const [explicitBin, setExplicitBin] = useState(false);
   const [histograma, setHistograma] = useState(false);
+  const [summaryData, setSummaryData] = useState(false);
   const formRef = useRef(null);
 
   // const { setError, clearErrors } = useForm();
@@ -45,7 +46,10 @@ const DbAnalisis = () => {
         console.log(JSON.parse(res.info));
         setPlainOptions(res.columns.filter((el) => el != "Unnamed: 0"));
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        message.error("Hubo un error al extraer las columnas del dataset");
+      });
   };
 
   const transformValues = (fileData, checkedColumns) => {
@@ -61,6 +65,18 @@ const DbAnalisis = () => {
         if (file?.file) {
           formData.append("file", file.file);
           formData.append("columns", [checkedColumns]);
+          if (formRef.current.getFieldValue("min_clusters")) {
+            formData.append(
+              "min_clusters",
+              formRef.current.getFieldValue("min_clusters")
+            );
+          }
+          if (formRef.current.getFieldValue("max_clusters")) {
+            formData.append(
+              "max_clusters",
+              formRef.current.getFieldValue("max_clusters")
+            );
+          }
           formData.append(
             "bits",
             formRef.current.getFieldValue("bits")
@@ -78,10 +94,7 @@ const DbAnalisis = () => {
               formRef.current.getFieldValue("bin_distance")
             );
           }
-          formData.append(
-            "histograma",
-            histograma ? 1 : 0
-          );
+          formData.append("histograma", histograma ? 1 : 0);
         }
         userApi
           .post("transform_values", formData, {
@@ -90,18 +103,23 @@ const DbAnalisis = () => {
             },
           })
           .then((res) => {
-            console.log(res);
+            // console.log(res);
             setDataToVisualize(res.result);
-            console.log(res.table);
-            console.log(JSON.parse(res.table));
+            // console.log(res.table);
+            // console.log(JSON.parse(res.table));
             setTableData(JSON.parse(res.table));
             setFileUrl(res.file_url);
             setImageData(res.graphics);
+            console.log("res.clusters");
+            console.log(res.clusters);
+            setSummaryData(res.clusters?.Summary);
+            //{CardinalityDispersion: 3, ClusterizedHyperBins: 130, TotalClusters: 3}
             // setPlainOptions(res.filter(el => el != 'Unnamed: 0'))
           })
           .catch((e) => {
             console.log(e);
             console.error(e);
+            message.error("Hubo un error al analizar la información");
             setDataToVisualize(false);
             setTableData(false);
             setFileUrl(false);
@@ -112,12 +130,6 @@ const DbAnalisis = () => {
         return false;
       });
   };
-
-  // useEffect(() => {
-  //   console.log('checkedColumns')
-  //   console.log(checkedColumns)
-  //   formRef.current.setFieldValue("columns", checkedColumns);
-  // }, [checkedColumns]);
 
   useEffect(() => {
     getChecklist();
@@ -173,14 +185,6 @@ const DbAnalisis = () => {
               height: "50vh",
             }}
             ref={formRef}
-            // onFinish={(file, plainOptions) => {
-            //   console.log(file, plainOptions);
-            //   transformValues(file, plainOptions);
-            // }}
-            // onValuesChange={(changedValues, values) => {
-            //   formRef.current.setFieldValue("bd", fileData);
-            //   formRef.current.setFieldValue("columns", plainOptions);
-            // }}
           >
             <Form.Item
               style={{
@@ -198,7 +202,15 @@ const DbAnalisis = () => {
               <UploadDb file={file} setFile={setFile} />
             </Form.Item>
             <Form.Item name="histograma">
-              <Checkbox onChange={(e) => setHistograma(e.target.checked)}>Histograma</Checkbox>
+              <Checkbox onChange={(e) => setHistograma(e.target.checked)}>
+                Histograma
+              </Checkbox>
+            </Form.Item>
+            <Form.Item name="min_clusters" label="Nro. clusters mínimos">
+              <InputNumber />
+            </Form.Item>
+            <Form.Item name="max_clusters" label="Nro. clusters máximo">
+              <InputNumber />
             </Form.Item>
             <Form.Item name="explicit_bin">
               <Checkbox
@@ -297,16 +309,26 @@ const DbAnalisis = () => {
               </>
             )}
           </Form>
+          {summaryData && (
+            <>
+              <h4>Dispersion cardinal: {summaryData?.CardinalityDispersion}</h4>
+              <h4>
+                Hiper bins clusterizados: {summaryData?.ClusterizedHyperBins}
+              </h4>
+              <h4>Total de clusters: {summaryData?.TotalClusters}</h4>
+            </>
+          )}
         </Card>
-        {/* {dataToVisualize ? (
-          <VisualizeData data={dataToVisualize} />
-        ) : (
-          <div style={{ width: "50vw", height: "50vh" }} />
-        )} */}
         <HistogramPlot
           imageData={imageData}
           setImageData={setImageData}
-          style={{ width: "50vw", height: "50vh" }}
+          style={{
+            width: "60vw",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
         />
       </div>
       {tableData && (

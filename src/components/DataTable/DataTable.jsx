@@ -27,7 +27,7 @@ const DataTable = ({ columns, data, fileUrl }) => {
       }
     } catch (err) {
       console.error("Error al descargar la tabla:", err);
-      setError("No se pudo descargar la tabla.");
+      message.error("No se pudo descargar la tabla");
     }
   };
 
